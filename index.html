@@ -73,6 +73,7 @@
         </select>
         
         <input type="text" id="nameInput" placeholder="输入姓名">
+        <input type="password" id="passwordInput" placeholder="输入密码">
         <button onclick="searchData()">查 询</button>
         
         <div id="result" class="result" style="display:none;"></div>
@@ -87,31 +88,29 @@
         // 全局变量来缓存数据，避免重复下载
         let workbookCache = null;
 
-        /**
-         * 显示错误信息
-         * @param {string} message - 要显示的错误消息
-         */
         function showError(message) {
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = `<div class="error">${message}</div>`;
         }
-
-        /**
-         * 主查询函数
-         */
+        
         async function searchData() {
             const name = document.getElementById('nameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
             const sheetName = document.getElementById('sheetSelect').value;
             const resultDiv = document.getElementById('result');
-            
-            resultDiv.innerHTML = '<div class="loader"></div><p>尚宫局核验中...</p>';
-            resultDiv.style.display = 'block';
             
             if (!name) {
                 showError('请先输入姓名！');
                 return;
             }
+            if (!password) {
+                showError('请先输入密码！');
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loader"></div><p>尚宫局核验中...</p>';
+            resultDiv.style.display = 'block';
 
             try {
                 const workbook = await getWorkbook();
@@ -122,15 +121,37 @@
                 const worksheet = workbook.Sheets[sheetName];
 
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const headerRow = jsonData[0];
 
-                const foundRow = jsonData.find(row => row[0] && row[0].includes(name));
+                // 找到密码列的索引
+                const passwordColumnIndex = headerRow.findIndex(h => h && String(h).trim() === '密码');
+                
+                if (passwordColumnIndex === -1) {
+                    throw new Error('账簿缺少密码列，无法进行验证。');
+                }
+
+                const foundRow = jsonData.find(row => row[0] && String(row[0]).includes(name));
 
                 if (foundRow) {
-                    resultDiv.innerHTML = `
-                        <h3 style="color:#8B0000">${foundRow[0]}</h3>
-                        <p>所在册籍：<b>${sheetName}</b></p>
-                        <p>天祐元年：<b>${foundRow[1] || '0'}</b> 两</p>
-                    `;
+                    const storedPassword = String(foundRow[passwordColumnIndex] || '');
+                    
+                    if (storedPassword === password) {
+                        let htmlContent = `<h3 style="color:#8B0000">${foundRow[0]}</h3><p>所在册籍：<b>${sheetName}</b></p>`;
+
+                        // 动态生成所有数据，跳过密码列
+                        for (let i = 1; i < headerRow.length; i++) {
+                            if (i !== passwordColumnIndex) {
+                                const header = headerRow[i];
+                const value = foundRow[i] || '0';
+                                htmlContent += `<p>${header}：<b>${value}</b> 两</p>`;
+                            }
+                        }
+                        
+                        resultDiv.innerHTML = htmlContent;
+
+                    } else {
+                        showError('御前尚宫急报：令牌错误！');
+                    }
                 } else {
                     showError(`未能找到「${name}」的记录，请检查姓名是否输入正确。`);
                 }
@@ -140,10 +161,6 @@
             }
         }
 
-        /**
-         * 获取并解析Excel文件，使用缓存机制
-         * @returns {Promise<Object>} Excel工作簿对象
-         */
         async function getWorkbook() {
             if (workbookCache) {
                 document.getElementById('result').innerHTML += '<p>已使用缓存数据。</p>';
