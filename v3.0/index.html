@@ -60,23 +60,6 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h2 style="text-align:center;color:#8B0000;margin-top:0;">🏯 六宫银两查询</h2>
-        
-        <select id="sheetSelect">
-            <option value="妃">妃嫔账簿</option>
-            <option value="皇嗣">皇嗣账簿</option>
-            <option value="宫人">宫人账簿</option>
-        </select>
-        
-        <input type="text" id="nameInput" placeholder="输入姓名">
-        <input type="password" id="passwordInput" placeholder="输入密码">
-        <button onclick="searchData()">查 询</button>
-        
-        <div id="result" class="result" style="display:none;"></div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -126,7 +109,6 @@
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 const headerRow = jsonData[0];
 
-                // ⚠️ 新增的调试代码：打印出表格的第一行标题和解析到的数据
                 console.log('表格的第一行标题是：', headerRow);
 
                 const passwordColumnIndex = headerRow.findIndex(h => h && String(h).trim() === '密码');
@@ -138,7 +120,7 @@
                 const foundRow = jsonData.find(row => row[0] && String(row[0]).includes(name));
 
                 if (foundRow) {
-                    console.log('代码解析到的数据是：', foundRow); // 打印解析到的那一行数据
+                    console.log('代码解析到的数据是：', foundRow);
 
                     const storedPassword = String(foundRow[passwordColumnIndex] || '');
                     
@@ -187,5 +169,22 @@
             return workbook;
         }
     </script>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align:center;color:#8B0000;margin-top:0;">🏯 六宫银两查询</h2>
+        
+        <select id="sheetSelect">
+            <option value="妃">妃嫔账簿</option>
+            <option value="皇嗣">皇嗣账簿</option>
+            <option value="宫人">宫人账簿</option>
+        </select>
+        
+        <input type="text" id="nameInput" placeholder="输入姓名">
+        <input type="password" id="passwordInput" placeholder="输入密码">
+        <button onclick="searchData()">查 询</button>
+        
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
 </body>
 </html>
