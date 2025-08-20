@@ -125,6 +125,7 @@
                 
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 const headerRow = jsonData[0];
+
                 const passwordColumnIndex = headerRow.findIndex(h => h && String(h).trim() === '密码');
 
                 if (passwordColumnIndex === -1) {
@@ -139,7 +140,8 @@
                     if (storedPassword === password) {
                         let htmlContent = `<h3 style="color:#8B0000">${foundRow[0]}</h3><p>所在册籍：<b>${sheetName}</b></p>`;
                         
-                        const yinliangIndex = headerRow.findIndex(h => h && String(h).trim() === '银两');
+                        // ⚠️ 关键改动：精确查找 '银两（0.000）'
+                        const yinliangIndex = headerRow.findIndex(h => h && String(h).trim() === '银两（0.000）');
                         const kufangIndex = headerRow.findIndex(h => h && String(h).trim() === '库房');
                         
                         if (yinliangIndex !== -1) {
@@ -168,18 +170,4 @@
             
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`无法连接尚宫局总册，状态码: ${response.status}`);
-            }
-            
-            document.getElementById('result').innerHTML += '<p>正在解封凤印文书...</p>';
-            const arrayBuffer = await response.arrayBuffer();
-            const data = new Uint8Array(arrayBuffer);
-            
-            document.getElementById('result').innerHTML += '<p>正在核对各宫分册...</p>';
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            return workbook;
-        }
-    </script>
-</body>
-</html>
+                throw new
