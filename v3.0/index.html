@@ -126,6 +126,9 @@
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 const headerRow = jsonData[0];
 
+                // ⚠️ 新增的调试代码：打印出表格的第一行标题和解析到的数据
+                console.log('表格的第一行标题是：', headerRow);
+
                 const passwordColumnIndex = headerRow.findIndex(h => h && String(h).trim() === '密码');
 
                 if (passwordColumnIndex === -1) {
@@ -135,12 +138,13 @@
                 const foundRow = jsonData.find(row => row[0] && String(row[0]).includes(name));
 
                 if (foundRow) {
+                    console.log('代码解析到的数据是：', foundRow); // 打印解析到的那一行数据
+
                     const storedPassword = String(foundRow[passwordColumnIndex] || '');
                     
                     if (storedPassword === password) {
                         let htmlContent = `<h3 style="color:#8B0000">${foundRow[0]}</h3><p>所在册籍：<b>${sheetName}</b></p>`;
                         
-                        // ⚠️ 关键改动：精确查找 '银两（0.000）'
                         const yinliangIndex = headerRow.findIndex(h => h && String(h).trim() === '银两（0.000）');
                         const kufangIndex = headerRow.findIndex(h => h && String(h).trim() === '库房');
                         
@@ -170,4 +174,18 @@
             
             const response = await fetch(url);
             if (!response.ok) {
-                throw new
+                throw new Error(`无法连接尚宫局总册，状态码: ${response.status}`);
+            }
+            
+            document.getElementById('result').innerHTML += '<p>正在解封凤印文书...</p>';
+            const arrayBuffer = await response.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+            
+            document.getElementById('result').innerHTML += '<p>正在核对各宫分册...</p>';
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            return workbook;
+        }
+    </script>
+</body>
+</html>
